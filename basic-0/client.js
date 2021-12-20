@@ -5,7 +5,7 @@ import idl from './target/idl/basic_0.json'
 anchor.setProvider(anchor.Provider.local())
 
 // address of the deployed program
-const programId = new anchor.web3.PublicKey('eaqfh3zz5gPL8fczHC9tjYksrJwjU8RZ2BCCv1trXRU')
+const programId = new anchor.web3.PublicKey('4mvYYUkSizk9RkCD9SRKXjAo4ckncvQN3fKYA16KVxWy')
 
 // create the program instance
 const program = new anchor.Program(idl, programId)
