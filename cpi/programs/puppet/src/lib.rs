@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP");
 
 #[program]
 pub mod puppet {
@@ -13,7 +13,7 @@ pub mod puppet {
   pub fn set_data(ctx: Context<SetData>, data: u64) -> ProgramResult {
     let puppet = &mut ctx.accounts.puppet;
     puppet.data = data;
-    
+
     Ok(())
   }
 }

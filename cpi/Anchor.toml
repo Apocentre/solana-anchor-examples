@@ -1,6 +1,6 @@
 [programs.localnet]
-pupper = ""
-pupper-master = ""
+pupper = "7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP"
+pupper-master = "7UBgahynaRRc7j5qKm5d4NJCXwMssPjWvRshXu2WPKT9"
 
 [registry]
 url = "https://anchor.projectserum.com"

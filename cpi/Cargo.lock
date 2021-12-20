@@ -799,6 +799,7 @@ name = "puppet-master"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "puppet",
 ]
 
 [[package]]
