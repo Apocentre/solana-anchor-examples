@@ -1,0 +1,12 @@
+[programs.localnet]
+basic_1 = "8VYTPhUNEWkmyKDxRR1EWjN2RufGYc7ZdZU7MnmLe7Po"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "/Users/ppoliani/.config/solana/id.json"
+
+[scripts]
+test = "yarn run mocha -p -t 1000000 tests/**/*.js -- --experimental-json-modules"
