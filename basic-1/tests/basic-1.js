@@ -19,7 +19,7 @@ describe('basic-1', () => {
     program = new anchor.Program(idl, programId)
   })
 
-  it('should create and init a new account', async () => {
+  const createAccount = async () => {
     const myAccount = Keypair.generate()
     await program.rpc.initialize(new anchor.BN(123), {
       accounts: {
@@ -30,8 +30,28 @@ describe('basic-1', () => {
       signers: [myAccount]
     })
 
+    return myAccount
+  }
+
+  it('should create and init a new account', async () => {
+    const myAccount = await createAccount()
+
     // fetch the newly created account
     const account = await program.account.myAccount.fetch(myAccount.publicKey)
     expect(account.data.toString()).to.be.equal((new anchor.BN(123)).toString())
+  })
+
+  it('should update state of an existing account', async () => {
+    const myAccount = await createAccount()
+
+    // update state
+    await program.rpc.update(new anchor.BN(321), {
+      accounts: {
+        myAccount: myAccount.publicKey
+      }
+    })
+
+    const account = await program.account.myAccount.fetch(myAccount.publicKey)
+    expect(account.data.toString()).to.be.equal((new anchor.BN(321)).toString())
   })
 })
