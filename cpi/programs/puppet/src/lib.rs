@@ -6,7 +6,7 @@ declare_id!("7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP");
 pub mod puppet {
   use super::*;
   
-  pub fn initialize(_: Context<Initialize>) -> ProgramResult {
+  pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
     Ok(())
   }
 
