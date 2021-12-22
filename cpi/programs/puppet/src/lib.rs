@@ -6,10 +6,10 @@ declare_id!("7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP");
 pub mod puppet {
   use super::*;
   
-  pub fn initialize(ctx: Context<Initialize>, puppet_master: Pubkey) -> ProgramResult {
+  pub fn initialize(ctx: Context<Initialize>, puppet_masted_pda: Pubkey) -> ProgramResult {
     let puppet = &mut ctx.accounts.puppet;
     puppet.data = 0;
-    puppet.authority = puppet_master;
+    puppet.puppet_masted_pda = puppet_masted_pda;
 
     Ok(())
   }
@@ -23,12 +23,16 @@ pub mod puppet {
 
   pub fn set_data_auth(ctx: Context<SetDataAuth>, data: u64) -> ProgramResult {
     let puppet = &mut ctx.accounts.puppet;
-    
-    // it can inly be called via CPI from the pupper master
-    if puppet.authority != ctx.accounts.authority.key() {
-      return Err(ErrorCode::Unauthorized.into())
+    let authority = &ctx.accounts.authority;
+
+    msg!(&format!("authority {:?}", authority));
+    msg!(&format!("authority is signer {:?}", authority.is_signer));
+    msg!(&format!("puppet_masted_pda {:?}", puppet.puppet_masted_pda));
+
+    if !authority.is_signer || puppet.puppet_masted_pda != authority.key() {
+      return Err(ErrorCode::NotPuppetMaster.into())
     }
-    
+
     puppet.data = data;
 
     Ok(())
@@ -37,13 +41,17 @@ pub mod puppet {
 
 #[error]
 pub enum ErrorCode {
-  #[msg("wrong PDA account")]
-  Unauthorized,
+  #[msg("only puppet master")]
+  NotPuppetMaster,
 }
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-  #[account(init, payer = user, space = 8 + 40)]
+  #[account(
+    init,
+    payer = user,
+    space = 8 + 40
+  )]
   pub puppet: Account<'info, State>,
   #[account(mut)]
   pub user: Signer<'info>,
@@ -65,6 +73,6 @@ pub struct SetDataAuth<'info> {
 
 #[account]
 pub struct State {
-  pub authority: Pubkey,
+  puppet_masted_pda: Pubkey,
   data: u64,
 }

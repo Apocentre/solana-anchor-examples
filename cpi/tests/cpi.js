@@ -9,6 +9,7 @@ describe('cpi', () => {
   const provider = anchor.Provider.local()
   let puppetProgram
   let puppetMasterProgram
+  let puppetProgramId
   let puppetMasterProgramId
 
   const createPuppetMasterPDA = async () => {
@@ -18,7 +19,7 @@ describe('cpi', () => {
 
   const createPuppetAccount = async () => {
     const puppetAccount = Keypair.generate()
-
+    
     await puppetProgram.rpc.initialize(await createPuppetMasterPDA(), {
       accounts: {
         puppet: puppetAccount.publicKey,
@@ -34,7 +35,7 @@ describe('cpi', () => {
   before(() => {
     anchor.setProvider(provider)
 
-    const puppetProgramId = new PublicKey('7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP')
+    puppetProgramId = new PublicKey('7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP')
     puppetMasterProgramId = new PublicKey('7UBgahynaRRc7j5qKm5d4NJCXwMssPjWvRshXu2WPKT9')
     
     puppetProgram = new anchor.Program(puppetIDL, puppetProgramId)
@@ -68,9 +69,8 @@ describe('cpi', () => {
     expect(account.data.toNumber()).to.equal(321)
   })
 
-  it.only('should authenticate when sending pullStringAuth instruction', async () => {
+  it.only('should allow the CPI to go though the puppet master', async () => {
     const puppetAccount = await createPuppetAccount()
-    
     const pda = await createPuppetMasterPDA()
 
     await puppetMasterProgram.rpc.pullStringsAuth(new anchor.BN(123), {
@@ -83,5 +83,24 @@ describe('cpi', () => {
 
     const account = await puppetProgram.account.state.fetch(puppetAccount.publicKey)
     expect(account.data.toNumber()).to.equal(123)
+  })
+
+  it('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
+    const puppetAccount = await createPuppetAccount()
+
+    try {
+      await puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
+        accounts: {
+          puppet: puppetAccount.publicKey,
+          authority: await createPuppetMasterPDA()
+        },
+        signers: [provider.wallet.payer]
+      })
+    } 
+    catch(error) {
+      expect(error.message).to.equal('6000: Unauthorized')
+    }
+
+    expect(true).to.equal(false)
   })
 })
