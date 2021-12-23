@@ -13,14 +13,13 @@ describe('cpi', () => {
   let puppetMasterProgramId
 
   const createPuppetMasterPDA = async () => {
-    const [pda] = await PublicKey.findProgramAddress([Buffer.from("puppet_master")], puppetMasterProgramId)
-    return pda
+    return await PublicKey.findProgramAddress([Buffer.from("puppet_master_5")], puppetMasterProgramId)
   }
 
   const createPuppetAccount = async () => {
     const puppetAccount = Keypair.generate()
     
-    await puppetProgram.rpc.initialize(await createPuppetMasterPDA(), {
+    await puppetProgram.rpc.initialize((await createPuppetMasterPDA())[0], {
       accounts: {
         puppet: puppetAccount.publicKey,
         user: provider.wallet.publicKey,
@@ -30,6 +29,20 @@ describe('cpi', () => {
     })
     
     return puppetAccount
+  }
+
+  const initializePda = async () => {
+    const [pda, bump_seed] = await createPuppetMasterPDA()
+    await puppetMasterProgram.rpc.initialize(bump_seed, {
+      accounts: {
+        puppetMasterPda: pda,
+        user: provider.wallet.publicKey,
+        systemProgram: SystemProgram.programId
+      },
+      signers: [provider.wallet.payer]
+    })
+
+    return [pda, bump_seed]
   }
 
   before(() => {
@@ -71,13 +84,13 @@ describe('cpi', () => {
 
   it.only('should allow the CPI to go though the puppet master', async () => {
     const puppetAccount = await createPuppetAccount()
-    const pda = await createPuppetMasterPDA()
+    const [pda] = await initializePda()
 
     await puppetMasterProgram.rpc.pullStringsAuth(new anchor.BN(123), {
       accounts: {
         puppet: puppetAccount.publicKey,
         puppetProgram: puppetProgram.programId,
-        puppetMasterPda: pda,
+        puppetMasterPda: pda
       }
     })
 
@@ -85,14 +98,33 @@ describe('cpi', () => {
     expect(account.data.toNumber()).to.equal(123)
   })
 
-  it('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
+  it.only('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
     const puppetAccount = await createPuppetAccount()
 
     try {
       await puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
         accounts: {
           puppet: puppetAccount.publicKey,
-          authority: await createPuppetMasterPDA()
+          authority: (await createPuppetMasterPDA())[0]
+        },
+        signers: [provider.wallet.payer]
+      })
+    } 
+    catch(error) {
+      expect(error.message).to.equal('Signature verification failed')
+    }
+
+    expect(true).to.equal(false)
+  })
+
+  it.only('should fail if invoked by unauthorized user that uses himself as the authority account', async () => {
+    const puppetAccount = await createPuppetAccount()
+
+    try {
+      await puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
+        accounts: {
+          puppet: puppetAccount.publicKey,
+          authority: provider.wallet.publicKey
         },
         signers: [provider.wallet.payer]
       })

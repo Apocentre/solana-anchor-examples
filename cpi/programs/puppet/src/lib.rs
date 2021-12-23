@@ -6,10 +6,10 @@ declare_id!("7upcW754B7BSCJMZj5Vts3VFtbRYPrEFAtkDzNd2reuP");
 pub mod puppet {
   use super::*;
   
-  pub fn initialize(ctx: Context<Initialize>, puppet_masted_pda: Pubkey) -> ProgramResult {
+  pub fn initialize(ctx: Context<Initialize>, puppet_master_pda: Pubkey) -> ProgramResult {
     let puppet = &mut ctx.accounts.puppet;
     puppet.data = 0;
-    puppet.puppet_masted_pda = puppet_masted_pda;
+    puppet.puppet_master_pda = puppet_master_pda;
 
     Ok(())
   }
@@ -26,10 +26,8 @@ pub mod puppet {
     let authority = &ctx.accounts.authority;
 
     msg!(&format!("authority {:?}", authority));
-    msg!(&format!("authority is signer {:?}", authority.is_signer));
-    msg!(&format!("puppet_masted_pda {:?}", puppet.puppet_masted_pda));
 
-    if !authority.is_signer || puppet.puppet_masted_pda != authority.key() {
+    if !authority.is_signer || puppet.puppet_master_pda != authority.key() {
       return Err(ErrorCode::NotPuppetMaster.into())
     }
 
@@ -68,11 +66,12 @@ pub struct SetData<'info> {
 pub struct SetDataAuth<'info> {
   #[account(mut)]
   pub puppet: Account<'info, State>,
-  pub authority: AccountInfo<'info>,
+  #[account(mut)]
+  pub authority: Signer<'info>,
 }
 
 #[account]
 pub struct State {
-  puppet_masted_pda: Pubkey,
+  puppet_master_pda: Pubkey,
   data: u64,
 }
