@@ -15,13 +15,6 @@ declare_id!("7UBgahynaRRc7j5qKm5d4NJCXwMssPjWvRshXu2WPKT9");
 pub mod puppet_master {
   use super::*;
 
-  pub fn initialize(ctx: Context<Initialize>, bump_seed: u8) -> ProgramResult {
-    let puppet_master_pda = &mut ctx.accounts.puppet_master_pda;
-    puppet_master_pda.bump_seed = bump_seed;
-
-    Ok(())
-  }
-
   pub fn pull_strings(ctx: Context<PullStrings>, data: u64) -> ProgramResult {
     let cpi_program = ctx.accounts.puppet_program.to_account_info();
     let cpi_accounts = SetData {
@@ -32,13 +25,13 @@ pub mod puppet_master {
     puppet::cpi::set_data(cpi_ctx, data)
   }
 
-  pub fn pull_strings_auth(ctx: Context<PullStringsAuth>, data: u64) -> ProgramResult {
+  pub fn pull_strings_auth(ctx: Context<PullStringsAuth>, data: u64, bump_seed: u8) -> ProgramResult {
     let cpi_program = ctx.accounts.puppet_program.to_account_info();
     let puppet_master_pda = &ctx.accounts.puppet_master_pda;
     let puppet_master_pda_account = puppet_master_pda.to_account_info();
     let seeds: &[&[u8]] = &[
       b"puppet_master_6",
-      &[puppet_master_pda.bump_seed]
+      &[bump_seed]
     ];
     let signer_seeds:&[&[&[u8]]] = &[&seeds[..]];
   
@@ -84,16 +77,8 @@ pub struct PullStrings<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump_seed: u8)]
 pub struct Initialize<'info> {
-  #[account(
-    init,
-    space = 8 + 8,
-    payer = user,
-    seeds = [b"puppet_master_6"],
-    bump = bump_seed
-  )]
-  pub puppet_master_pda: Account<'info, PuppetMasterState>,
+  pub puppet_master_pda: AccountInfo<'info>,
   
   #[account(mut)]
   pub user: Signer<'info>,
@@ -106,10 +91,5 @@ pub struct PullStringsAuth<'info> {
   pub puppet: Account<'info, State>,
   pub puppet_program: Program<'info, Puppet>,
   #[account(mut)]
-  pub puppet_master_pda: Account<'info, PuppetMasterState>,
-}
-
-#[account]
-pub struct PuppetMasterState {
-  bump_seed: u8,
+  pub puppet_master_pda: AccountInfo<'info>,
 }

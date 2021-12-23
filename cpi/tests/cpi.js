@@ -82,11 +82,12 @@ describe('cpi', () => {
     expect(account.data.toNumber()).to.equal(321)
   })
 
-  it.only('should allow the CPI to go though the puppet master', async () => {
+  it.only('should allow the CPI to go through the puppet master', async () => {
     const puppetAccount = await createPuppetAccount()
-    const [pda] = await initializePda()
+    // const [pda] = await initializePda()
+    const [pda, bump_seed] = await createPuppetMasterPDA()
 
-    await puppetMasterProgram.rpc.pullStringsAuth(new anchor.BN(123), {
+    await puppetMasterProgram.rpc.pullStringsAuth(new anchor.BN(123), bump_seed, {
       accounts: {
         puppet: puppetAccount.publicKey,
         puppetProgram: puppetProgram.programId,

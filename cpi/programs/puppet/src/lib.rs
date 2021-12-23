@@ -25,7 +25,7 @@ pub mod puppet {
     let puppet = &mut ctx.accounts.puppet;
     let authority = &ctx.accounts.authority;
 
-    if !authority.is_signer || puppet.puppet_master_pda != authority.key() {
+    if !authority.is_signer && puppet.puppet_master_pda != authority.key() {
       return Err(ErrorCode::NotPuppetMaster.into())
     }
 
