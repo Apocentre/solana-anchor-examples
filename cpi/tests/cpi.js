@@ -13,7 +13,7 @@ describe('cpi', () => {
   let puppetMasterProgramId
 
   const createPuppetMasterPDA = async () => {
-    return await PublicKey.findProgramAddress([Buffer.from("puppet_master_5")], puppetMasterProgramId)
+    return await PublicKey.findProgramAddress([Buffer.from("puppet_master_6")], puppetMasterProgramId)
   }
 
   const createPuppetAccount = async () => {
@@ -130,7 +130,7 @@ describe('cpi', () => {
       })
     } 
     catch(error) {
-      expect(error.message).to.equal('6000: Unauthorized')
+      expect(error.message).to.equal('6000: only puppet master')
     }
 
     expect(true).to.equal(false)

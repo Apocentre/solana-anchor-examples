@@ -37,7 +37,7 @@ pub mod puppet_master {
     let puppet_master_pda = &ctx.accounts.puppet_master_pda;
     let puppet_master_pda_account = puppet_master_pda.to_account_info();
     let seeds: &[&[u8]] = &[
-      b"puppet_master_5",
+      b"puppet_master_6",
       &[puppet_master_pda.bump_seed]
     ];
     let signer_seeds:&[&[&[u8]]] = &[&seeds[..]];
@@ -86,7 +86,7 @@ pub struct Initialize<'info> {
     init,
     space = 8 + 8,
     payer = user,
-    seeds = [b"puppet_master_5"],
+    seeds = [b"puppet_master_6"],
     bump = bump_seed
   )]
   pub puppet_master_pda: Account<'info, PuppetMasterState>,
