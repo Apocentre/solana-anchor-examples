@@ -25,6 +25,8 @@ pub mod puppet {
     let puppet = &mut ctx.accounts.puppet;
     let authority = &ctx.accounts.authority;
 
+    msg!("authority {:?}", authority);
+
     if !authority.is_signer && puppet.puppet_master_pda != authority.key() {
       return Err(ErrorCode::NotPuppetMaster.into())
     }
@@ -64,6 +66,7 @@ pub struct SetData<'info> {
 pub struct SetDataAuth<'info> {
   #[account(mut)]
   pub puppet: Account<'info, State>,
+  // This must be a Signer; otherwise the is_signer will be false
   #[account(mut)]
   pub authority: Signer<'info>,
 }

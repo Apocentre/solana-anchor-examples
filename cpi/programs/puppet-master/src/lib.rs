@@ -1,9 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::InstructionData;
-use solana_program::{
-  instruction::{Instruction},
-  program::{invoke_signed},
-};
 // load the relevant data from the puppet program
 use puppet::cpi::accounts::{SetData, SetDataAuth};
 use puppet::program::Puppet;
@@ -29,8 +24,10 @@ pub mod puppet_master {
     let cpi_program = ctx.accounts.puppet_program.to_account_info();
     let puppet_master_pda = &ctx.accounts.puppet_master_pda;
     let puppet_master_pda_account = puppet_master_pda.to_account_info();
+
+    // We MUST use the bump_seed otherwise it fails with invalid signer errors
     let seeds: &[&[u8]] = &[
-      b"puppet_master_6",
+      b"puppet_master",
       &[bump_seed]
     ];
     let signer_seeds:&[&[&[u8]]] = &[&seeds[..]];

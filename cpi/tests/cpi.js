@@ -13,7 +13,7 @@ describe('cpi', () => {
   let puppetMasterProgramId
 
   const createPuppetMasterPDA = async () => {
-    return await PublicKey.findProgramAddress([Buffer.from("puppet_master_6")], puppetMasterProgramId)
+    return await PublicKey.findProgramAddress([Buffer.from("puppet_master")], puppetMasterProgramId)
   }
 
   const createPuppetAccount = async () => {
@@ -99,7 +99,7 @@ describe('cpi', () => {
     expect(account.data.toNumber()).to.equal(123)
   })
 
-  it('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
+  it.only('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
     const puppetAccount = await createPuppetAccount()
 
     try {
@@ -118,13 +118,15 @@ describe('cpi', () => {
     expect(true).to.equal(false)
   })
 
-  it('should fail if invoked by unauthorized user that uses himself as the authority account', async () => {
+  it.only('should fail if invoked by unauthorized user that uses himself as the authority account', async () => {
     const puppetAccount = await createPuppetAccount()
 
     try {
       await puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
         accounts: {
           puppet: puppetAccount.publicKey,
+          // here the signer matches the authority but not the puppet_master_pda
+          // thus it should fail
           authority: provider.wallet.publicKey
         },
         signers: [provider.wallet.payer]
