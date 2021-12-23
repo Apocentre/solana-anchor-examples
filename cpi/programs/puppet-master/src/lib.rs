@@ -53,22 +53,26 @@ pub mod puppet_master {
       signer_seeds
     );
 
-    let ix_data = (puppet::instruction::SetDataAuth{data}).data();
+    
+    // The following verbose way is what the puppet::cpi::set_data_auth will fo under the hood 
+    //
+    // let ix_data = (puppet::instruction::SetDataAuth{data}).data();
 
-    let ix = Instruction {
-      program_id: *cpi_program.key,
-      accounts: cpi_ctx.to_account_metas(Some(true)),
-      data: ix_data,
-    };
+    // let ix = Instruction {
+    //   program_id: *cpi_program.key,
+    //   accounts: cpi_ctx.to_account_metas(Some(true)),
+    //   data: ix_data,
+    // };
 
-    invoke_signed(
-      &ix,
-      &[
-        ctx.accounts.puppet.to_account_info(),
-        puppet_master_pda_account,
-      ],
-      &signer_seeds
-    )
+    // invoke_signed(
+    //   &ix,
+    //   &[
+    //     ctx.accounts.puppet.to_account_info(),
+    //     puppet_master_pda_account,
+    //   ],
+    //   &signer_seeds
+    // )
+    puppet::cpi::set_data_auth(cpi_ctx, data)
   }
 }
 
