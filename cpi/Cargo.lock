@@ -800,6 +800,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "puppet",
+ "solana-program",
 ]
 
 [[package]]
