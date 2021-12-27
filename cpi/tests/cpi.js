@@ -118,7 +118,7 @@ describe('cpi', () => {
     expect(true).to.equal(false)
   })
 
-  it.only('should fail if invoked by unauthorized user that uses himself as the authority account', async () => {
+  it('should fail if invoked by unauthorized user that uses himself as the authority account', async () => {
     const puppetAccount = await createPuppetAccount()
 
     try {

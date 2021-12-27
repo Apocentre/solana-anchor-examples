@@ -43,7 +43,6 @@ pub mod puppet_master {
       signer_seeds
     );
 
-    
     // The following verbose way is what the puppet::cpi::set_data_auth will fo under the hood 
     //
     // let ix_data = (puppet::instruction::SetDataAuth{data}).data();
