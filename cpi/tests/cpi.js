@@ -82,7 +82,7 @@ describe('cpi', () => {
     expect(account.data.toNumber()).to.equal(321)
   })
 
-  it.only('should allow the CPI to go through the puppet master', async () => {
+  it('should allow the CPI to go through the puppet master', async () => {
     const puppetAccount = await createPuppetAccount()
     // const [pda] = await initializePda()
     const [pda, bump_seed] = await createPuppetMasterPDA()

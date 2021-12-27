@@ -73,15 +73,6 @@ pub struct PullStrings<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
-  pub puppet_master_pda: AccountInfo<'info>,
-  
-  #[account(mut)]
-  pub user: Signer<'info>,
-  pub system_program: AccountInfo<'info>,
-}
-
-#[derive(Accounts)]
 pub struct PullStringsAuth<'info> {
   #[account(mut)]
   pub puppet: Account<'info, State>,
