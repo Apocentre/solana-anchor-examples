@@ -1,7 +1,10 @@
 import anchor from '@project-serum/anchor'
-import {expect} from 'chai'
+import {use, expect} from 'chai'
+import chaiAsPromise from 'chai-as-promised'
 import puppetIDL from '../target/idl/puppet.json'
 import puppetMasterIDL from '../target/idl/puppet_master.json'
+
+use(chaiAsPromise)
 
 const {SystemProgram, PublicKey, Keypair} = anchor.web3
 
@@ -99,43 +102,31 @@ describe('cpi', () => {
     expect(account.data.toNumber()).to.equal(123)
   })
 
-  it.only('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
+  it('should fail if invoked by unauthorized user which is not the puppet master pda', async () => {
     const puppetAccount = await createPuppetAccount()
 
-    try {
-      await puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
-        accounts: {
-          puppet: puppetAccount.publicKey,
-          authority: (await createPuppetMasterPDA())[0]
-        },
-        signers: [provider.wallet.payer]
-      })
-    } 
-    catch(error) {
-      expect(error.message).to.equal('Signature verification failed')
-    }
-
-    expect(true).to.equal(false)
+    await expect(puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
+      accounts: {
+        puppet: puppetAccount.publicKey,
+        authority: (await createPuppetMasterPDA())[0]
+      },
+      signers: [provider.wallet.payer]
+    }))
+    .to.be.rejectedWith('Signature verification failed')
   })
 
   it('should fail if invoked by unauthorized user that uses himself as the authority account', async () => {
     const puppetAccount = await createPuppetAccount()
 
-    try {
-      await puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
-        accounts: {
-          puppet: puppetAccount.publicKey,
-          // here the signer matches the authority but not the puppet_master_pda
-          // thus it should fail
-          authority: provider.wallet.publicKey
-        },
-        signers: [provider.wallet.payer]
-      })
-    } 
-    catch(error) {
-      expect(error.message).to.equal('6000: only puppet master')
-    }
-
-    expect(true).to.equal(false)
+    await expect(puppetProgram.rpc.setDataAuth(new anchor.BN(123), {
+      accounts: {
+        puppet: puppetAccount.publicKey,
+        // here the signer matches the authority but not the puppet_master_pda
+        // thus it should fail
+        authority: provider.wallet.publicKey
+      },
+      signers: [provider.wallet.payer]
+    }))
+    .to.be.rejectedWith('6000: only puppet master')
   })
 })
