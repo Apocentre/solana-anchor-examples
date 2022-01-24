@@ -23,7 +23,7 @@ const type = {
 
 const schema = new Map([[Entry, type]]);
 
-const createLeaf = account => borsh.serialize(schema, new Entry(account))
+export const createLeaf = account => borsh.serialize(schema, new Entry(account))
 
 const preProcess = accounts => {
   const result = []
@@ -41,4 +41,5 @@ export const createTree = accounts => {
 }
 
 export const getRoot = tree => Uint8Array.from(tree.getRoot())
-export const getProof = (tree, leaf) => tree.getHexProof(keccak256(leaf))
+export const getProof = (tree, leaf) => tree.getProof(keccak256(leaf)).map(({data}) => Uint8Array.from(data))
+export const getProofIndices = (tree, leaf) => tree.getProofIndices(keccak256(leaf)).map(({data}) => Uint8Array.from(data))
