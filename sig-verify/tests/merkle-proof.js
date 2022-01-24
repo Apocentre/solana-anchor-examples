@@ -17,7 +17,7 @@ describe.only('merkle-proof', () => {
   const merkleTree = createTree(participants.map(p => p.publicKey))
 
   const initialize = async () => {
-    await program.rpc.initialize(getRoot(merkleTree), new anchor.BN(100), {
+    await program.rpc.initialize(getRoot(merkleTree), {
       accounts: {
         state: stateAccount.publicKey,
         user: provider.wallet.publicKey,
@@ -36,12 +36,11 @@ describe.only('merkle-proof', () => {
 
   it('should revert if a non whitelisted account uses other whitelisted account proof', async () => {
     const proof = getProof(merkleTree, createLeaf(participants[0].publicKey))
-    const proofIndices = getProofIndices(merkleTree, createLeaf(participants[0].publicKey))
     const nonWhitelistedAccount = Keypair.generate()
 
     console.log('>>>>>>>>>>>>>', proof)
 
-    await program.rpc.contribute(proof, proofIndices, new anchor.BN(500), {
+    await program.rpc.contribute(proof, new anchor.BN(500), {
       accounts: {
         state: stateAccount.publicKey,
         sender: nonWhitelistedAccount.publicKey

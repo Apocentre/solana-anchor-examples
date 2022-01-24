@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use borsh::BorshSerialize;
 use std::convert::TryFrom;
 
-declare_id!("GTRqnYcgFdKRWrBA8eujeVN7kWfNgdQX1XH77SPfqoya");
+declare_id!("4vvzyWRTpBHuHGeZzLyNXjqMbEW626xnGm29AESwk1Av");
 
 #[program]
 pub mod sig_verify {

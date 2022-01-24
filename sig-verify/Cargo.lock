@@ -733,7 +733,7 @@ name = "merkle-proof"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "rs_merkle",
+ "sha2",
 ]
 
 [[package]]
@@ -899,15 +899,6 @@ name = "regex-syntax"
 version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
-
-[[package]]
-name = "rs_merkle"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca38db72b771218df4ad0840e2b82ab8f36d9bbce2c0d73fb6ff061c4ae19c1b"
-dependencies = [
- "sha2",
-]
 
 [[package]]
 name = "rustc_version"
