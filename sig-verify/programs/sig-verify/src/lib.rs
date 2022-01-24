@@ -31,6 +31,8 @@ pub mod sig_verify {
     let mut message: Vec<u8> = Vec::new();
     raw_message.serialize(&mut message).unwrap();
     
+    // NOTE: The instruction budget is very limited so we can;t do any ed25519 or even ECDSA
+    // verification on-chain
     let key = salty::signature::PublicKey::try_from(&state.authority.to_bytes()).unwrap();
     let sig = salty::signature::Signature::from(&sig);
 
