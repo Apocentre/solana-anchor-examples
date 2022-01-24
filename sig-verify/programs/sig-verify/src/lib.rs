@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use borsh::BorshSerialize;
 use sodalite::sign_attached_open;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("BNqgBdKHfaxezzKwVpmeHya2fT9pN5Nhz4PXKef9GAB6");
 
 #[program]
 pub mod sig_verify {

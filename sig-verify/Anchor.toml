@@ -1,5 +1,5 @@
 [programs.localnet]
-sig_verify = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+sig_verify = "BNqgBdKHfaxezzKwVpmeHya2fT9pN5Nhz4PXKef9GAB6"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -9,4 +9,4 @@ cluster = "localnet"
 wallet = "/Users/ppoliani/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run mocha -p -t 1000000 tests/**/*.js -- --experimental-json-modules"
