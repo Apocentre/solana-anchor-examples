@@ -1,5 +1,6 @@
 [programs.localnet]
 sig_verify = "GTRqnYcgFdKRWrBA8eujeVN7kWfNgdQX1XH77SPfqoya"
+merkle_proof = "3th4VMLzB3Qz7wcnZUoL57fbXqBG1QvVMAHDm6PBURmH"
 
 [registry]
 url = "https://anchor.projectserum.com"
