@@ -17,4 +17,4 @@ default = []
 
 [dependencies]
 anchor-lang = "0.20.1"
-sodalite = "0.4.0"
+salty = "0.2.0"

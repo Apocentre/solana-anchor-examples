@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 use borsh::BorshSerialize;
-use sodalite::sign_attached_open;
+use std::convert::TryFrom;
 
-declare_id!("BNqgBdKHfaxezzKwVpmeHya2fT9pN5Nhz4PXKef9GAB6");
+declare_id!("GTRqnYcgFdKRWrBA8eujeVN7kWfNgdQX1XH77SPfqoya");
 
 #[program]
 pub mod sig_verify {
@@ -14,23 +14,30 @@ pub mod sig_verify {
     Ok(())
   }
 
-  pub fn contribute(ctx: Context<Contribute>, data: ContributeData) -> ProgramResult {
+  pub fn contribute(
+    ctx: Context<Contribute>,
+    nonce: u64,
+    sig: [u8; 64],
+    amount: u64,
+  ) -> ProgramResult {
     let state = &mut ctx.accounts.state;
     let raw_message = ContributeMsg {
       program: ctx.program_id,
-      nonce: data.nonce,
+      nonce: nonce,
       sender: ctx.accounts.sender.unsigned_key(),
-      amount: data.amount
+      amount: amount
     };
 
     let mut message: Vec<u8> = Vec::new();
     raw_message.serialize(&mut message).unwrap();
+    
+    let key = salty::signature::PublicKey::try_from(&state.authority.to_bytes()).unwrap();
+    let sig = salty::signature::Signature::from(&sig);
 
-    if let Err(_) = sign_attached_open(
-      &mut message,
-      &data.sig,
-      &state.authority.to_bytes()
-    ) {
+    msg!("message {:?}", message);
+    msg!("sig {:?}", sig);
+
+    if let Err(_) = key.verify(&message, &sig) {
       return Err(ErrorCode::InvalidSig.into())
     }
 
@@ -63,15 +70,8 @@ pub struct Contribute<'info> {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct ContributeMsg<'info> {
   program: &'info Pubkey,
-  nonce: [u8; 32],
+  nonce: u64,
   sender: &'info Pubkey,
-  amount: u64,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct ContributeData {
-  nonce: [u8; 32],
-  sig: [u8; 64],
   amount: u64,
 }
 
