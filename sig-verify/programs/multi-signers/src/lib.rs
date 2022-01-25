@@ -20,12 +20,20 @@ pub mod multi_signers {
     let state = &mut ctx.accounts.state;
 
     // tx should be signed by both the sender and the auth provider
-    if ctx.accounts.auth_provider != state.auth_provider {
+    if ctx.accounts.auth_provider.unsigned_key() != &state.auth_provider {
       return Err(ErrorCode::Unauthorized.into())
     }
 
     // TODO: we know the user is authenticated thus we can continue with the business logic
+    msg!("amount {:?}", amount);
+
+    Ok(())
   }
+}
+
+#[account]
+pub struct State {
+  auth_provider: Pubkey,
 }
 
 #[derive(Accounts)]

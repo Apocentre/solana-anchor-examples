@@ -6,7 +6,7 @@ import {createTree, getRoot, createLeaf, getProof, getProofIndices} from './merk
 use(chaiAsPromise)
 const {SystemProgram, PublicKey, Keypair} = anchor.web3
 
-describe.only('merkle-proof', () => {
+describe('merkle-proof', () => {
   const provider = anchor.Provider.local()
   // Configure the client to use the local cluster.
   anchor.setProvider(provider)
