@@ -3,7 +3,8 @@ import {use, expect} from 'chai'
 import chaiAsPromise from 'chai-as-promised'
 
 use(chaiAsPromise)
-const {SystemProgram, PublicKey, Keypair} = anchor.web3
+const {SystemProgram, PublicKey, Keypair, utils} = anchor.web3
+const utf8 = anchor.utils.bytes.utf8
 
 describe.only('multi-signers', () => {
   const provider = anchor.Provider.local()
@@ -13,20 +14,31 @@ describe.only('multi-signers', () => {
   const authProvider = Keypair.generate()
   const stateAccount = Keypair.generate()
 
+  const createAccountInfoPDA = async user => {
+    return await PublicKey.findProgramAddress(
+      [utf8.encode('multi_signers'), user.toBuffer()],
+      program.programId
+    )
+  }
+
   const createTx = async (
-    feePayer,
+    user,
     amount,
     blockhash
   ) => {
-    const tx = await program.transaction.contribute(amount, {
+    const [pda, bump_seed] = await createAccountInfoPDA(user)
+
+    const tx = await program.transaction.contribute(bump_seed, amount, {
       accounts: {
         state: stateAccount.publicKey,
-        sender: provider.wallet.publicKey,
+        user,
+        userState: pda,
         authProvider: authProvider.publicKey,
+        systemProgram: SystemProgram.programId
       }
     })
     tx.recentBlockhash = blockhash
-    tx.feePayer = feePayer
+    tx.feePayer = user
 
     return tx
   }

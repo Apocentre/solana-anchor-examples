@@ -1,9 +1,11 @@
 pub mod program_accounts;
+pub mod math;
 pub mod program_errors;
 pub mod program_access_controls;
 
 use anchor_lang::prelude::*;
-
+use std::mem::size_of;
+use math::{U64};
 
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
 
@@ -24,11 +26,11 @@ pub mod multi_signers {
   #[access_control(authenticate(&ctx.accounts.auth_provider, &ctx.accounts.state))]
   pub fn contribute(
     ctx: Context<Contribute>,
-    amount: u64,
-    _bump: u8,
+    _bump_seed: u8, // NOTE: make sure this is the first param user injects; otherwise it doesn't work
+    amount: U64,
   ) -> ProgramResult {
     let state = &mut ctx.accounts.state;
-
+    state.total_raised = state.total_raised.add(amount)?;
 
     // TODO: we know the user is authenticated thus we can continue with the business logic
     msg!("amount {:?}", amount);
@@ -42,7 +44,7 @@ pub struct Initialize<'info> {
   #[account(
     init,
     payer = user,
-    space = 8 + 32
+    space = 8 + size_of::<State>(),
   )]
   pub state: Account<'info, State>,
 
@@ -52,24 +54,21 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump: u8)]
+#[instruction(bump_seed: u8)]
 pub struct Contribute<'info> {
+  #[account(mut)]
+  pub state: Account<'info, State>,
   #[account(
     init,
     payer = user,
-    seeds = [user.key().as_ref()],
-    bump = bump
+    space = 8 + size_of::<UserInfo>(),
+    seeds = [b"multi_signers", user.key().as_ref()],
+    bump = bump_seed,
   )]
   pub user_state: Account<'info, UserInfo>,
-
   #[account(mut)]
-  pub state: Account<'info, State>,
-  
-  #[account()]
   pub user: Signer<'info>,
-  
   #[account()]
   pub auth_provider: Signer<'info>,
-  
   pub system_program: Program<'info, System>,
 }
