@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
 
-use program_accounts::{State};
+use program_accounts::{State, UserInfo};
 use program_access_controls::{authenticate};
 
 #[program]
@@ -25,6 +25,7 @@ pub mod multi_signers {
   pub fn contribute(
     ctx: Context<Contribute>,
     amount: u64,
+    _bump: u8,
   ) -> ProgramResult {
     let state = &mut ctx.accounts.state;
 
@@ -51,11 +52,24 @@ pub struct Initialize<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(bump: u8)]
 pub struct Contribute<'info> {
+  #[account(
+    init,
+    payer = user,
+    seeds = [user.key().as_ref()],
+    bump = bump
+  )]
+  pub user_state: Account<'info, UserInfo>,
+
   #[account(mut)]
   pub state: Account<'info, State>,
+  
   #[account()]
-  pub sender: Signer<'info>,
+  pub user: Signer<'info>,
+  
   #[account()]
   pub auth_provider: Signer<'info>,
+  
+  pub system_program: Program<'info, System>,
 }
