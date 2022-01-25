@@ -131,7 +131,7 @@ describe.only('multi-signers', () => {
     const authProviderSig = await partiallySign(tx, dodgyAccount)
     const senderSig = await providerSign(tx)
 
-    // A dodgy account tries to sign the tx and this authenticate the user
+    // A dodgy account tries to sign the tx and not the authenticated the user
     tx.addSignature(dodgyAccount.publicKey, Buffer.from(authProviderSig, 'hex'))
     tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
 

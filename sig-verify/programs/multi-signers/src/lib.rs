@@ -34,7 +34,7 @@ pub mod multi_signers {
     let user_state = &mut ctx.accounts.user_state;
 
     msg!("state.total_raised {:?}", state.total_raised);
-    
+
     state.total_raised = state.total_raised.safe_add(amount)?;
     user_state.total_amount = user_state.total_amount.safe_add(amount)?;
 
