@@ -9,10 +9,54 @@ describe.only('multi-signers', () => {
   const provider = anchor.Provider.local()
   anchor.setProvider(provider)
 
-  const program = anchor.workspace.SigVerify
+  const program = anchor.workspace.MultiSigners
   const authProvider = Keypair.generate()
   const stateAccount = Keypair.generate()
 
+  const createTx = async (
+    feePayer,
+    amount,
+    blockhash
+  ) => {
+    const tx = await program.transaction.contribute(amount, {
+      accounts: {
+        state: stateAccount.publicKey,
+        sender: provider.wallet.publicKey,
+        authProvider: authProvider.publicKey,
+      }
+    })
+    tx.recentBlockhash = blockhash
+    tx.feePayer = feePayer
+
+    return tx
+  }
+
+  const providerSign = async tx => {
+    await provider.wallet.signTransaction(tx)
+
+    return tx.signatures
+      .find(s => s.publicKey.equals(provider.wallet.publicKey))
+      .signature
+      .toString('hex')
+  }
+
+  const partiallySign = async (tx, signer) => {
+    tx.sign(signer)
+    
+    return tx.signatures
+      .find(s => s.publicKey.equals(signer.publicKey))
+      .signature
+      .toString('hex')
+  }
+
+  // const partiallySign = (serializedMsg, signer) => {
+  //   const message = anchor.web3.Message.from(serializedMsg)
+  //   console.log('message >>>>>', message)
+  //   const tx = anchor.web3.Transaction.from(Buffer.from(serializedMsg, 'hex'))
+  //   tx.partialSign(signer)
+
+  //   return tx.serializeMessage().toString('hex')
+  // }
 
   const initialize = async () => {
     await program.rpc.initialize(authProvider.publicKey, {
@@ -32,16 +76,31 @@ describe.only('multi-signers', () => {
     expect(account.authProvider.toString()).to.equal(authProvider.publicKey.toString())
   });
 
-  it('should fail if signature is wrong', async () => {
-    const partialTx = await program.transactions.contribute(nonce, sig, amount, {
-      accounts: {
-        state: stateAccount.publicKey,
-        sender: provider.wallet.publicKey,
-        authProvider: authProvider.publicKey,
-      },
-      signers: [provider.wallet.payer]
-    })
+  it('should fail if tx is not signed by both the sender and the auth provider', async () => {
+    const amount = new anchor.BN(5000)
+    const {blockhash} = await provider.connection.getRecentBlockhash()
+    // create the transaction that will be signed by both signers
+    const tx = await createTx(
+      provider.wallet.publicKey,
+      amount,
+      blockhash
+    )
+    
+    const authProviderSig = await partiallySign(tx, authProvider)
+    console.log('authProviderSig -> ', authProviderSig)
+    // Note we use different way to sign for the local provider since that might include some
+    // browser extension that will be signing and thus we don't have direct access to the private key
+    const senderSig = await providerSign(tx)
+    console.log('senderSig -> ', senderSig)
 
+    // compile all signatures to complete the tx
+    tx.addSignature(authProvider.publicKey, Buffer.from(authProviderSig, 'hex'))
+    tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
 
+    // simulate sending the serialized and partially signed tx to the final signer
+    // that will transmit the tx to the network
+    const result = await provider.connection.sendRawTransaction(tx.serialize())
+    
+    console.log('Result tx ', result)
   })
 });

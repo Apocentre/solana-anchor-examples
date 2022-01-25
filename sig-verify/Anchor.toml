@@ -1,6 +1,7 @@
 [programs.localnet]
 sig_verify = "4vvzyWRTpBHuHGeZzLyNXjqMbEW626xnGm29AESwk1Av"
 merkle_proof = "FvwCReuHq53gKV1neJKZoRZhtPZihemnKridipR4buQK"
+multi_signers = "7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J"
 
 [registry]
 url = "https://anchor.projectserum.com"
