@@ -3,8 +3,38 @@ import {use, expect} from 'chai'
 import chaiAsPromise from 'chai-as-promised'
 
 use(chaiAsPromise)
-const {SystemProgram, PublicKey, Keypair, utils} = anchor.web3
+const {SystemProgram, PublicKey, Keypair, LAMPORTS_PER_SOL, Transaction} = anchor.web3
 const utf8 = anchor.utils.bytes.utf8
+
+const createAccount = async provider => {
+  const newAccount = Keypair.generate()
+  const createAccountIx = SystemProgram.createAccount({
+    programId: SystemProgram.programId,
+    fromPubkey: provider.wallet.publicKey,
+    newAccountPubkey: newAccount.publicKey
+  })
+
+  const tx = new Transaction()
+  tx.add(createAccountIx)
+  const {blockhash} = await provider.connection.getRecentBlockhash()
+  tx.recentBlockhash = blockhash
+  tx.feePayer = provider.wallet.publicKey
+  
+  await provider.wallet.signTransaction(tx)
+  
+  // this will make the provider wallet sign the tx, as well as, a list of
+  // array of signers (in this case the new account that is created should also sign the tx)
+  await provider.send(tx, [newAccount])
+
+  const airdropSignature = await provider.connection.requestAirdrop(
+    newAccount.publicKey,
+    LAMPORTS_PER_SOL,
+  )
+
+  await provider.connection.confirmTransaction(airdropSignature)
+
+  return newAccount
+}
 
 describe.only('multi-signers', () => {
   const provider = anchor.Provider.local()
@@ -16,9 +46,6 @@ describe.only('multi-signers', () => {
   let pda
   let bump_seed
 
-  before(async () => {
-    [pda, bump_seed] = await createAccountInfoPDA(user)
-  })
   const createAccountInfoPDA = async user => {
     return await PublicKey.findProgramAddress(
       [utf8.encode('multi_signers'), user.toBuffer()],
@@ -28,15 +55,17 @@ describe.only('multi-signers', () => {
 
   const createTx = async (
     user,
+    authProvider,
     amount,
     blockhash
   ) => {
+    [pda, bump_seed] = await createAccountInfoPDA(user)
     const tx = await program.transaction.contribute(bump_seed, amount, {
       accounts: {
         state: stateAccount.publicKey,
         user,
         userState: pda,
-        authProvider: authProvider.publicKey,
+        authProvider,
         systemProgram: SystemProgram.programId
       }
     })
@@ -77,6 +106,10 @@ describe.only('multi-signers', () => {
     })
   }
 
+  beforeEach(async () => {
+    await createAccount(provider)
+  })
+
   it('should initialize', async () => {
     await initialize()
 
@@ -86,15 +119,15 @@ describe.only('multi-signers', () => {
 
   it('should fail if tx is not signed by both the sender and the auth provider', async () => {
     const amount = new anchor.BN(5000)
+    const dodgyAccount = await createAccount(provider)
     const {blockhash} = await provider.connection.getRecentBlockhash()
-    // create the transaction that will be signed by both signers
     const tx = await createTx(
       provider.wallet.publicKey,
+      dodgyAccount.publicKey,
       amount,
       blockhash
     )
 
-    const dodgyAccount = Keypair.generate()
     const authProviderSig = await partiallySign(tx, dodgyAccount)
     const senderSig = await providerSign(tx)
 
@@ -111,6 +144,7 @@ describe.only('multi-signers', () => {
     // create the transaction that will be signed by both signers
     const tx = await createTx(
       provider.wallet.publicKey,
+      authProvider.publicKey,
       amount,
       blockhash
     )
@@ -123,11 +157,12 @@ describe.only('multi-signers', () => {
 
     // simulate sending the serialized and partially signed tx to the final signer
     // that will transmit the tx to the network
-    const result = await provider.connection.sendRawTransaction(tx.serialize())
+    await provider.connection.sendRawTransaction(tx.serialize())
     
+    const [pda] = await createAccountInfoPDA(provider.wallet.publicKey)
     const state = await program.account.state.fetch(stateAccount.publicKey)
-    const userState = await program.account.state.fetch(pda)
-    
+    const userState = await program.account.userInfo.fetch(pda)
+
     expect(state.totalRaised).to.equal(new anchor.BN(5000))
     expect(userState.totalAmount).to.equal(new anchor.BN(5000))
   })

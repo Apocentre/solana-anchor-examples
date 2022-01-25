@@ -33,8 +33,13 @@ pub mod multi_signers {
     let state = &mut ctx.accounts.state;
     let user_state = &mut ctx.accounts.user_state;
 
+    msg!("state.total_raised {:?}", state.total_raised);
+    
     state.total_raised = state.total_raised.safe_add(amount)?;
     user_state.total_amount = user_state.total_amount.safe_add(amount)?;
+
+    msg!("state.total_raised {:?}", state.total_raised);
+    msg!("user_state.total_amount {:?}", user_state.total_amount);
 
     Ok(())
   }
@@ -60,7 +65,7 @@ pub struct Contribute<'info> {
   #[account(mut)]
   pub state: Account<'info, State>,
   #[account(
-    init,
+    init_if_needed,
     payer = user,
     space = 8 + size_of::<UserInfo>(),
     seeds = [b"multi_signers", user.key().as_ref()],
