@@ -1,6 +1,14 @@
+pub mod program_accounts;
+pub mod program_errors;
+pub mod program_access_controls;
+
 use anchor_lang::prelude::*;
 
+
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
+
+use program_accounts::{State};
+use program_access_controls::{authenticate};
 
 #[program]
 pub mod multi_signers {
@@ -13,27 +21,19 @@ pub mod multi_signers {
     Ok(())
   }
 
+  #[access_control(authenticate(&ctx.accounts.auth_provider, &ctx.accounts.state))]
   pub fn contribute(
     ctx: Context<Contribute>,
     amount: u64,
   ) -> ProgramResult {
     let state = &mut ctx.accounts.state;
 
-    // tx should be signed by both the sender and the auth provider
-    if ctx.accounts.auth_provider.unsigned_key() != &state.auth_provider {
-      return Err(ErrorCode::Unauthorized.into())
-    }
 
     // TODO: we know the user is authenticated thus we can continue with the business logic
     msg!("amount {:?}", amount);
 
     Ok(())
   }
-}
-
-#[account]
-pub struct State {
-  auth_provider: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -58,10 +58,4 @@ pub struct Contribute<'info> {
   pub sender: Signer<'info>,
   #[account()]
   pub auth_provider: Signer<'info>,
-}
-
-#[error]
-pub enum ErrorCode {
-  #[msg("unauthorized")]
-  Unauthorized,
 }
