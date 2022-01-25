@@ -31,6 +31,8 @@ describe.only('multi-signers', () => {
     return tx
   }
 
+  // Note we use different way to sign for the local provider since that might include some
+  // browser extension that will be signing and thus we don't have direct access to the private key
   const providerSign = async tx => {
     await provider.wallet.signTransaction(tx)
 
@@ -48,15 +50,6 @@ describe.only('multi-signers', () => {
       .signature
       .toString('hex')
   }
-
-  // const partiallySign = (serializedMsg, signer) => {
-  //   const message = anchor.web3.Message.from(serializedMsg)
-  //   console.log('message >>>>>', message)
-  //   const tx = anchor.web3.Transaction.from(Buffer.from(serializedMsg, 'hex'))
-  //   tx.partialSign(signer)
-
-  //   return tx.serializeMessage().toString('hex')
-  // }
 
   const initialize = async () => {
     await program.rpc.initialize(authProvider.publicKey, {
@@ -87,11 +80,7 @@ describe.only('multi-signers', () => {
     )
     
     const authProviderSig = await partiallySign(tx, authProvider)
-    console.log('authProviderSig -> ', authProviderSig)
-    // Note we use different way to sign for the local provider since that might include some
-    // browser extension that will be signing and thus we don't have direct access to the private key
     const senderSig = await providerSign(tx)
-    console.log('senderSig -> ', senderSig)
 
     // compile all signatures to complete the tx
     tx.addSignature(authProvider.publicKey, Buffer.from(authProviderSig, 'hex'))
