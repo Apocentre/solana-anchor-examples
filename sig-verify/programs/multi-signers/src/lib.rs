@@ -1,12 +1,12 @@
 pub mod program_accounts;
-pub mod math;
+pub mod safe_math;
 pub mod program_errors;
 pub mod program_access_controls;
 
 use anchor_lang::prelude::*;
 use std::mem::size_of;
 use std::convert::Into;
-use math::{SafeMath};
+use safe_math::{SafeMath};
 
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
 
