@@ -1,14 +1,14 @@
 use anchor_lang::prelude::*;
-use crate::math::{U64};
 
 #[account]
 pub struct State {
   pub auth_provider: Pubkey,
-  pub total_raised: U64,
+  // Custom defined types like U64 currently cannot work on the js lib of anchor
+  pub total_raised: u64,
 }
 
 #[account]
 #[derive(Default)]
 pub struct UserInfo {
-  pub total_amount: U64,
+  pub total_amount: u64,
 }

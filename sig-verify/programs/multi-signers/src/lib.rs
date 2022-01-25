@@ -5,7 +5,8 @@ pub mod program_access_controls;
 
 use anchor_lang::prelude::*;
 use std::mem::size_of;
-use math::{U64};
+use std::convert::Into;
+use math::{SafeMath};
 
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
 
@@ -27,13 +28,13 @@ pub mod multi_signers {
   pub fn contribute(
     ctx: Context<Contribute>,
     _bump_seed: u8, // NOTE: make sure this is the first param user injects; otherwise it doesn't work
-    amount: U64,
+    amount: u64,
   ) -> ProgramResult {
     let state = &mut ctx.accounts.state;
-    state.total_raised = state.total_raised.add(amount)?;
+    let user_state = &mut ctx.accounts.user_state;
 
-    // TODO: we know the user is authenticated thus we can continue with the business logic
-    msg!("amount {:?}", amount);
+    state.total_raised = state.total_raised.safe_add(amount)?;
+    user_state.total_amount = user_state.total_amount.safe_add(amount)?;
 
     Ok(())
   }

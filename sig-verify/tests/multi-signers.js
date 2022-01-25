@@ -13,7 +13,12 @@ describe.only('multi-signers', () => {
   const program = anchor.workspace.MultiSigners
   const authProvider = Keypair.generate()
   const stateAccount = Keypair.generate()
+  let pda
+  let bump_seed
 
+  before(async () => {
+    [pda, bump_seed] = await createAccountInfoPDA(user)
+  })
   const createAccountInfoPDA = async user => {
     return await PublicKey.findProgramAddress(
       [utf8.encode('multi_signers'), user.toBuffer()],
@@ -26,8 +31,6 @@ describe.only('multi-signers', () => {
     amount,
     blockhash
   ) => {
-    const [pda, bump_seed] = await createAccountInfoPDA(user)
-
     const tx = await program.transaction.contribute(bump_seed, amount, {
       accounts: {
         state: stateAccount.publicKey,
@@ -79,7 +82,7 @@ describe.only('multi-signers', () => {
 
     const account = await program.account.state.fetch(stateAccount.publicKey)
     expect(account.authProvider.toString()).to.equal(authProvider.publicKey.toString())
-  });
+  })
 
   it('should fail if tx is not signed by both the sender and the auth provider', async () => {
     const amount = new anchor.BN(5000)
@@ -90,7 +93,27 @@ describe.only('multi-signers', () => {
       amount,
       blockhash
     )
-    
+
+    const dodgyAccount = Keypair.generate()
+    const authProviderSig = await partiallySign(tx, dodgyAccount)
+    const senderSig = await providerSign(tx)
+
+    // A dodgy account tries to sign the tx and this authenticate the user
+    tx.addSignature(dodgyAccount.publicKey, Buffer.from(authProviderSig, 'hex'))
+    tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
+
+    await expect(provider.connection.sendRawTransaction(tx.serialize())).to.be.rejectedWith('unauthorized')
+  })
+
+  it('should update the global and user state', async () => {
+    const amount = new anchor.BN(5000)
+    const {blockhash} = await provider.connection.getRecentBlockhash()
+    // create the transaction that will be signed by both signers
+    const tx = await createTx(
+      provider.wallet.publicKey,
+      amount,
+      blockhash
+    )
     const authProviderSig = await partiallySign(tx, authProvider)
     const senderSig = await providerSign(tx)
 
@@ -102,6 +125,10 @@ describe.only('multi-signers', () => {
     // that will transmit the tx to the network
     const result = await provider.connection.sendRawTransaction(tx.serialize())
     
-    console.log('Result tx ', result)
+    const state = await program.account.state.fetch(stateAccount.publicKey)
+    const userState = await program.account.state.fetch(pda)
+    
+    expect(state.totalRaised).to.equal(new anchor.BN(5000))
+    expect(userState.totalAmount).to.equal(new anchor.BN(5000))
   })
-});
+})
