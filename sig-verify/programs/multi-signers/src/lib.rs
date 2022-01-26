@@ -4,10 +4,11 @@ pub mod program_errors;
 pub mod program_access_controls;
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, TokenAccount, Transfer};
+use anchor_spl::token::{self, Token, Mint, TokenAccount, Transfer};
 use std::mem::size_of;
 use std::convert::Into;
 use safe_math::{SafeMath};
+use program_errors::{ErrorCode};
 
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
 
@@ -20,6 +21,7 @@ pub mod multi_signers {
 
   pub fn initialize(
     ctx: Context<Initialize>,
+    _bump_seed: u8, // NOTE: make sure this is the first param user injects; otherwise it doesn't work
     auth_provider: Pubkey,
     treasury: Pubkey,
     purchase_token: Pubkey
@@ -47,9 +49,9 @@ pub mod multi_signers {
     let cpi_accounts = Transfer {
       from: ctx.accounts.user.to_account_info(),
       to: ctx.accounts.treasury_account.to_account_info(),
-      authority: ctx.accounts.token_authority.clone(),
+      authority: ctx.accounts.user.to_account_info(),
     };
-    let cpi_program = ctx.accounts.token_program.clone();
+    let cpi_program = ctx.accounts.token_program.to_account_info();
     let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
     token::transfer(cpi_ctx, amount)?;
 
@@ -69,25 +71,19 @@ pub struct Initialize<'info> {
     space = 8 + size_of::<State>(),
   )]
   pub state: Account<'info, State>,
-  #[account(
-    init_if_needed,
-    payer = user,
-    seeds = [b"multi_signers", treasury_account.key().as_ref()],
-    bump = bump_seed,
-  )]
-  pub token_authority: AccountInfo<'info>,
-
   #[account(mut)]
   pub user: Signer<'info>,
   #[account(
     init,
     payer = user,
-    token::mint = state.purchase_token,
+    space = 8 + size_of::<TokenAccount>(),
+    token::mint = mint,
     token::authority = user,
   )]
   pub treasury_account: Account<'info, TokenAccount>,
-  // #[account(address = state.purchase_token)]
-  // pub mint: Account<'info, Mint>,
+  #[account(address = state.purchase_token)]
+  pub mint: Account<'info, Mint>,
+  pub token_program: Program<'info, Token>,
   pub system_program: Program<'info, System>,
 }
 
@@ -96,6 +92,8 @@ pub struct Initialize<'info> {
 pub struct Contribute<'info> {
   #[account(mut)]
   pub state: Account<'info, State>,
+
+  // this is the user state PDA which stores the state for the given user
   #[account(
     init_if_needed,
     payer = user,
@@ -106,15 +104,19 @@ pub struct Contribute<'info> {
   pub user_state: Account<'info, UserInfo>,
   #[account(mut)]
   pub user: Signer<'info>,
-  #[account(mut)]
+  #[account(
+    mut,
+    constraint = user_token_account.mint == state.purchase_token @ ErrorCode::UnsupportedToken
+  )]
   pub user_token_account: Account<'info, TokenAccount>,
   #[account(
     mut,
-    constraint = user_token_account.mint == treasury_account.mint @ "wrong mint account"
+    // this is an alternative to using access_control
+    constraint = user_token_account.mint == treasury_account.mint @ ErrorCode::UnsupportedToken
   )]
   pub treasury_account: Account<'info, TokenAccount>,
-  pub token_authority: AccountInfo<'info>,
   #[account()]
   pub auth_provider: Signer<'info>,
+  pub token_program: Program<'info, Token>,
   pub system_program: Program<'info, System>,
 }
