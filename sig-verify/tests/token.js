@@ -14,3 +14,18 @@ export const createMintAccount = async (
   decimals,
   TOKEN_PROGRAM_ID,
 )
+
+export const createTokenAccount = async (token, account) => await token.getOrCreateAssociatedAccountInfo(account)
+
+export const mintTo = async (
+  token,
+  dest,
+  authority,
+  amount,
+  multiSigners=[]
+) => await token.mintTo(
+  dest,
+  authority,
+  multiSigners,
+  amount,
+)
