@@ -23,7 +23,7 @@ describe.only('multi-signers', () => {
 
   let owner
   let token
-  let treasury
+  let treasuryAccount
   let pda
   let bump_seed
 
@@ -37,6 +37,8 @@ describe.only('multi-signers', () => {
   const createTx = async (
     user,
     authProvider,
+    userTokenAccount,
+    treasuryAccount,
     amount,
     blockhash
   ) => {
@@ -47,6 +49,9 @@ describe.only('multi-signers', () => {
         user,
         userState: pda,
         authProvider,
+        userTokenAccount,
+        treasuryAccount,
+        tokenProgram: getTokenProgramId(),
         systemProgram: SystemProgram.programId
       }
     })
@@ -83,19 +88,18 @@ describe.only('multi-signers', () => {
       owner,
       owner.publicKey
     )
-    treasury = await createTokenAccount(token, owner.publicKey)
+    treasuryAccount = await createTokenAccount(token, owner.publicKey)
   })
 
   it('should initialize', async () => {
     await program.rpc.initialize(
       authProvider.publicKey,
-      treasury.publicKey, 
+      treasuryAccount.address, 
       token.publicKey, 
       {
         accounts: {
           state: stateAccount.publicKey,
           user: provider.wallet.publicKey,
-          tokenProgram: getTokenProgramId(),
           systemProgram: SystemProgram.programId
         },
         signers: [stateAccount, provider.wallet.payer]
@@ -106,29 +110,32 @@ describe.only('multi-signers', () => {
     expect(account.authProvider.toString()).to.equal(authProvider.publicKey.toString())
   })
 
-  // it('should fail if tx is not signed by both the sender and the auth provider', async () => {
-  //   const amount = new anchor.BN(5000)
-  //   const dodgyAccount = await createAccount(provider)
-  //   const {blockhash} = await provider.connection.getRecentBlockhash()
-  //   const tx = await createTx(
-  //     provider.wallet.publicKey,
-  //     dodgyAccount.publicKey,
-  //     amount,
-  //     blockhash
-  //   )
+  it('should fail if tx is not signed by both the sender and the auth provider', async () => {
+    const amount = new anchor.BN(5000)
+    const dodgyAccount = await createAccount(provider)
+    const userTokenAccount = await createTokenAccount(token, provider.wallet.publicKey)
+    const {blockhash} = await provider.connection.getRecentBlockhash()
+    const tx = await createTx(
+      provider.wallet.publicKey,
+      dodgyAccount.publicKey,
+      userTokenAccount.address,
+      treasuryAccount.address,
+      amount,
+      blockhash
+    )
 
-  //   const authProviderSig = await partiallySign(tx, dodgyAccount)
-  //   const senderSig = await providerSign(tx)
+    const authProviderSig = await partiallySign(tx, dodgyAccount)
+    const senderSig = await providerSign(tx)
 
-  //   // A dodgy account tries to sign the tx and not the authenticated the user
-  //   tx.addSignature(dodgyAccount.publicKey, Buffer.from(authProviderSig, 'hex'))
-  //   tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
+    // A dodgy account tries to sign the tx and not the authenticated the user
+    tx.addSignature(dodgyAccount.publicKey, Buffer.from(authProviderSig, 'hex'))
+    tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
 
-  //   // NOTE custom error messages seem to be broken in the latest anchor version
-  //   // await expect(provider.connection.sendRawTransaction(tx.serialize())).to.be.rejectedWith('unauthorized')
-  //   await expect(provider.connection.sendRawTransaction(tx.serialize()))
-  //     .to.be.rejectedWith('Error processing Instruction 0: custom program error: 0x1770')
-  // })
+    // NOTE custom error messages seem to be broken in the latest anchor version
+    // await expect(provider.connection.sendRawTransaction(tx.serialize())).to.be.rejectedWith('unauthorized')
+    await expect(provider.connection.sendRawTransaction(tx.serialize()))
+      .to.be.rejectedWith('Error processing Instruction 0: custom program error: 0x1770')
+  })
 
   // it('should update the global and user state', async () => {
   //   const alice = await createAccount(provider)
