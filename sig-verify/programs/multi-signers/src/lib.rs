@@ -83,7 +83,6 @@ pub struct Initialize<'info> {
 pub struct Contribute<'info> {
   #[account(mut)]
   pub state: Account<'info, State>,
-
   // this is the user state PDA which stores the state for the given user
   // it uses the user public key and thus it's unique for each user
   #[account(
@@ -96,7 +95,6 @@ pub struct Contribute<'info> {
   pub user_state: Account<'info, UserInfo>,
   #[account(mut)]
   pub user: Signer<'info>,
-
   // The token account owned by the user that call contribute
   // the constraint suggest both this token account matched the 
   // purchase token used for this sale
@@ -114,9 +112,8 @@ pub struct Contribute<'info> {
     constraint = user_token_account.mint == treasury_account.mint @ ErrorCode::UnsupportedToken,
   )]
   pub treasury_account: Account<'info, TokenAccount>,
-
-  // The account that should co-sign the contribute operation to provide
-  // access to the user
+  
+  // The account that should co-sign the contribute operation to provide access to the user
   #[account()]
   pub auth_provider: Signer<'info>,
   pub token_program: Program<'info, Token>,
