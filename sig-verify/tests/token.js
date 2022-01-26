@@ -1,12 +1,11 @@
-import { token } from "@project-serum/anchor/dist/cjs/utils"
 import {Token, TOKEN_PROGRAM_ID} from "@solana/spl-token"
 
 export const createMintAccount = async (
   connection,
   feePayer,
   mintAuthority,
-  freezeAuthority,
-  decimals=9
+  decimals=9,
+  freezeAuthority=null,
 ) => await Token.createMint(
   connection,
   feePayer,
@@ -16,7 +15,7 @@ export const createMintAccount = async (
   TOKEN_PROGRAM_ID,
 )
 
-export const createTokenAccount = async (token, account) => await token.getOrCreateAssociatedAccountInfo(account)
+export const createTokenAccount = async (token, owner) => await token.getOrCreateAssociatedAccountInfo(owner)
 
 export const mintTo = async (
   token,
@@ -58,3 +57,5 @@ export const approve = async (
   multiSigners,
   amount
 )
+
+export const getTokenProgramId = () => TOKEN_PROGRAM_ID

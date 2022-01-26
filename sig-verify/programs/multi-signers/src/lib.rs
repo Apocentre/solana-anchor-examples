@@ -4,7 +4,7 @@ pub mod program_errors;
 pub mod program_access_controls;
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, Mint, TokenAccount, Transfer};
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use std::mem::size_of;
 use std::convert::Into;
 use safe_math::{SafeMath};
@@ -21,7 +21,6 @@ pub mod multi_signers {
 
   pub fn initialize(
     ctx: Context<Initialize>,
-    _bump_seed: u8, // NOTE: make sure this is the first param user injects; otherwise it doesn't work
     auth_provider: Pubkey,
     treasury: Pubkey,
     purchase_token: Pubkey
@@ -75,7 +74,6 @@ pub struct Initialize<'info> {
   pub user: Signer<'info>,
 
   // These two are needed to create of the above accounts
-  pub token_program: Program<'info, Token>,
   pub system_program: Program<'info, System>,
 }
 
