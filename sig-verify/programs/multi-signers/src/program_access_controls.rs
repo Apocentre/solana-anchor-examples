@@ -12,3 +12,13 @@ pub fn authenticate(auth_provider: &Signer, state: &State) -> ProgramResult {
 
   Ok(())
 }
+
+// make sure that the token account user provided with the instruction is the one that
+// the program account supports
+pub fn check_token(user_token_account: &Pubkey, purchase_token: &Pubkey) -> ProgramResult {
+  if user_token_account != purchase_token {
+    return Err(ErrorCode::UnsupportedToken.into())
+  }
+
+  Ok(())
+}
