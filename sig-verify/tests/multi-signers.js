@@ -135,35 +135,40 @@ describe.only('multi-signers', () => {
     tx.addSignature(dodgyAccount.publicKey, Buffer.from(authProviderSig, 'hex'))
     tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
 
-    await expect(provider.connection.sendRawTransaction(tx.serialize())).to.be.rejectedWith('unauthorized')
+    // NOTE custom error messages seem to be broken in the latest anchor version
+    // await expect(provider.connection.sendRawTransaction(tx.serialize())).to.be.rejectedWith('unauthorized')
+    await expect(provider.connection.sendRawTransaction(tx.serialize()))
+      .to.be.rejectedWith('Error processing Instruction 0: custom program error: 0x1770')
   })
 
   it('should update the global and user state', async () => {
+    const alice = await createAccount(provider)
     const amount = new anchor.BN(5000)
     const {blockhash} = await provider.connection.getRecentBlockhash()
     // create the transaction that will be signed by both signers
     const tx = await createTx(
-      provider.wallet.publicKey,
+      alice.publicKey,
       authProvider.publicKey,
       amount,
       blockhash
     )
     const authProviderSig = await partiallySign(tx, authProvider)
-    const senderSig = await providerSign(tx)
+    const senderSig = await partiallySign(tx, alice)
 
     // compile all signatures to complete the tx
     tx.addSignature(authProvider.publicKey, Buffer.from(authProviderSig, 'hex'))
-    tx.addSignature(provider.wallet.publicKey, Buffer.from(senderSig, 'hex'))
+    tx.addSignature(alice.publicKey, Buffer.from(senderSig, 'hex'))
 
     // simulate sending the serialized and partially signed tx to the final signer
     // that will transmit the tx to the network
     await provider.connection.sendRawTransaction(tx.serialize())
     
-    const [pda] = await createAccountInfoPDA(provider.wallet.publicKey)
+    const [pda] = await createAccountInfoPDA(alice.publicKey)
+    await new Promise(resolve => setTimeout(resolve, 1000))
     const state = await program.account.state.fetch(stateAccount.publicKey)
     const userState = await program.account.userInfo.fetch(pda)
 
-    expect(state.totalRaised).to.equal(new anchor.BN(5000))
-    expect(userState.totalAmount).to.equal(new anchor.BN(5000))
+    expect(state.totalRaised.toNumber()).to.equal(5000)
+    expect(userState.totalAmount.toNumber()).to.equal(5000)
   })
 })

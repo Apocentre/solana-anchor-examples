@@ -33,6 +33,7 @@ pub mod multi_signers {
     let state = &mut ctx.accounts.state;
     let user_state = &mut ctx.accounts.user_state;
 
+    msg!("state account {:?}", state.key());
     msg!("state.total_raised {:?}", state.total_raised);
 
     state.total_raised = state.total_raised.safe_add(amount)?;

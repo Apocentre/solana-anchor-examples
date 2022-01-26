@@ -11,4 +11,4 @@ cluster = "localnet"
 wallet = "/Users/ppoliani/.config/solana/id.json"
 
 [scripts]
-test = "yarn run mocha -p -t 1000000 tests/**/*.js -- --experimental-json-modules"
+test = "yarn run mocha -- --timeout 1000000 tests/**/*.js --experimental-json-modules"
