@@ -5,7 +5,9 @@ import {createAccount} from './account.js'
 import {
   getTokenProgramId,
   createMintAccount,
-  createTokenAccount
+  createTokenAccount,
+  mintTo,
+  getAccountInfo
 } from './token.js'
 
 use(chaiAsPromise)
@@ -19,8 +21,8 @@ describe.only('multi-signers', () => {
 
   const program = anchor.workspace.MultiSigners
   const authProvider = Keypair.generate()
-  const stateAccount = Keypair.generate()
 
+  let stateAccount
   let owner
   let token
   let treasuryAccount
@@ -81,17 +83,7 @@ describe.only('multi-signers', () => {
       .toString('hex')
   }
 
-  before(async () => {
-    owner = await createAccount(provider)
-    token = await createMintAccount(
-      provider.connection,
-      owner,
-      owner.publicKey
-    )
-    treasuryAccount = await createTokenAccount(token, owner.publicKey)
-  })
-
-  it('should initialize', async () => {
+  const initialize = async () => {
     await program.rpc.initialize(
       authProvider.publicKey,
       treasuryAccount.address, 
@@ -105,12 +97,29 @@ describe.only('multi-signers', () => {
         signers: [stateAccount, provider.wallet.payer]
       }
     )
+  }
+
+  beforeEach(async () => {
+    stateAccount = Keypair.generate()
+    owner = await createAccount(provider)
+    token = await createMintAccount(
+      provider.connection,
+      owner,
+      owner.publicKey
+    )
+    treasuryAccount = await createTokenAccount(token, owner.publicKey)
+  })
+
+  it('should initialize', async () => {
+    await initialize()
 
     const account = await program.account.state.fetch(stateAccount.publicKey)
     expect(account.authProvider.toString()).to.equal(authProvider.publicKey.toString())
   })
 
   it('should fail if tx is not signed by both the sender and the auth provider', async () => {
+    await initialize()
+
     const amount = new anchor.BN(5000)
     const dodgyAccount = await createAccount(provider)
     const userTokenAccount = await createTokenAccount(token, provider.wallet.publicKey)
@@ -137,34 +146,52 @@ describe.only('multi-signers', () => {
       .to.be.rejectedWith('Error processing Instruction 0: custom program error: 0x1770')
   })
 
-  // it('should update the global and user state', async () => {
-  //   const alice = await createAccount(provider)
-  //   const amount = new anchor.BN(5000)
-  //   const {blockhash} = await provider.connection.getRecentBlockhash()
-  //   // create the transaction that will be signed by both signers
-  //   const tx = await createTx(
-  //     alice.publicKey,
-  //     authProvider.publicKey,
-  //     amount,
-  //     blockhash
-  //   )
-  //   const authProviderSig = await partiallySign(tx, authProvider)
-  //   const senderSig = await partiallySign(tx, alice)
+  it('should update the global and user state', async () => {
+    await initialize()
 
-  //   // compile all signatures to complete the tx
-  //   tx.addSignature(authProvider.publicKey, Buffer.from(authProviderSig, 'hex'))
-  //   tx.addSignature(alice.publicKey, Buffer.from(senderSig, 'hex'))
+    const alice = await createAccount(provider)
+    const userTokenAccount = await createTokenAccount(token, alice.publicKey)
+    const amount = new anchor.BN(5000)
 
-  //   // simulate sending the serialized and partially signed tx to the final signer
-  //   // that will transmit the tx to the network
-  //   await provider.connection.sendRawTransaction(tx.serialize())
+    await mintTo(
+      token,
+      userTokenAccount.address,
+      owner.publicKey,
+      5000
+    )
     
-  //   const [pda] = await createAccountInfoPDA(alice.publicKey)
-  //   await new Promise(resolve => setTimeout(resolve, 1000))
-  //   const state = await program.account.state.fetch(stateAccount.publicKey)
-  //   const userState = await program.account.userInfo.fetch(pda)
+    const {blockhash} = await provider.connection.getRecentBlockhash()
+    // create the transaction that will be signed by both signers
+    const tx = await createTx(
+      alice.publicKey,
+      authProvider.publicKey,
+      userTokenAccount.address,
+      treasuryAccount.address,
+      amount,
+      blockhash
+    )
+    const authProviderSig = await partiallySign(tx, authProvider)
+    const senderSig = await partiallySign(tx, alice)
 
-  //   expect(state.totalRaised.toNumber()).to.equal(5000)
-  //   expect(userState.totalAmount.toNumber()).to.equal(5000)
-  // })
+    // compile all signatures to complete the tx
+    tx.addSignature(authProvider.publicKey, Buffer.from(authProviderSig, 'hex'))
+    tx.addSignature(alice.publicKey, Buffer.from(senderSig, 'hex'))
+
+    // simulate sending the serialized and partially signed tx to the final signer
+    // that will transmit the tx to the network
+    await provider.connection.sendRawTransaction(tx.serialize())
+    
+    const [pda] = await createAccountInfoPDA(alice.publicKey)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    const state = await program.account.state.fetch(stateAccount.publicKey)
+    const userState = await program.account.userInfo.fetch(pda)
+
+    expect(state.totalRaised.toNumber()).to.equal(5000)
+    expect(userState.totalAmount.toNumber()).to.equal(5000)
+
+    // check that treasury has received the tokens.
+    // Note we need to load the account info again from the network
+    const treasuryAccountInfo = await getAccountInfo(token, treasuryAccount.address)
+    expect(treasuryAccountInfo.amount.toNumber()).to.equal(5000)
+  })
 })

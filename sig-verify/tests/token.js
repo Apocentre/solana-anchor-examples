@@ -58,4 +58,6 @@ export const approve = async (
   amount
 )
 
+export const getAccountInfo = async (token, account) => await token.getAccountInfo(account)
+
 export const getTokenProgramId = () => TOKEN_PROGRAM_ID

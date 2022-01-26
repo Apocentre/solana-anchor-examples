@@ -5,5 +5,7 @@ pub enum ErrorCode {
   #[msg("unauthorized")]
   Unauthorized,
   #[msg("unsupported token")]
-  UnsupportedToken
+  UnsupportedToken,
+  #[msg("wrong token account owner")]
+  WrongTokenAccountOwner,
 }

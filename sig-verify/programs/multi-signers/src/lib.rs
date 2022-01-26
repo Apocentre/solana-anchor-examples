@@ -13,7 +13,7 @@ use program_errors::{ErrorCode};
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
 
 use program_accounts::{State, UserInfo};
-use program_access_controls::{authenticate, check_token};
+use program_access_controls::{authenticate};
 
 #[program]
 pub mod multi_signers {
@@ -33,8 +33,9 @@ pub mod multi_signers {
     Ok(())
   }
 
+  // NOTE: This has the same effect as the constraint we added to user_token_account
+  // #[access_control(check_token(&ctx.accounts.user_token_account.mint, &ctx.accounts.state.purchase_token))]
   #[access_control(authenticate(&ctx.accounts.auth_provider, &ctx.accounts.state))]
-  #[access_control(check_token(&ctx.accounts.user_token_account.mint, &ctx.accounts.state.purchase_token))]
   pub fn contribute(
     ctx: Context<Contribute>,
     _bump_seed: u8, // NOTE: make sure this is the first param user injects; otherwise it doesn't work
@@ -45,7 +46,7 @@ pub mod multi_signers {
 
     // transfer tokens from user's token Account to the treasury account
     let cpi_accounts = Transfer {
-      from: ctx.accounts.user.to_account_info(),
+      from: ctx.accounts.user_token_account.to_account_info(),
       to: ctx.accounts.treasury_account.to_account_info(),
       authority: ctx.accounts.user.to_account_info(),
     };
@@ -101,7 +102,8 @@ pub struct Contribute<'info> {
   // purchase token used for this sale
   #[account(
     mut,
-    constraint = user_token_account.mint == state.purchase_token @ ErrorCode::UnsupportedToken
+    constraint = user_token_account.mint == state.purchase_token @ ErrorCode::UnsupportedToken,
+    constraint = user_token_account.owner == user.key() @ ErrorCode::WrongTokenAccountOwner
   )]
   pub user_token_account: Account<'info, TokenAccount>,
   #[account(
@@ -110,7 +112,6 @@ pub struct Contribute<'info> {
     // The constraint suggests that both this token account and the treasury point to the
     // same mint account i.e. Token
     constraint = user_token_account.mint == treasury_account.mint @ ErrorCode::UnsupportedToken,
-    address = state.purchase_token
   )]
   pub treasury_account: Account<'info, TokenAccount>,
 
