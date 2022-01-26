@@ -45,7 +45,6 @@ pub mod multi_signers {
     let user_state = &mut ctx.accounts.user_state;
 
     // transfer tokens from user's token Account to the treasury account
-    let user_token_account = &ctx.accounts.user_token_account;
     let cpi_accounts = Transfer {
       from: ctx.accounts.user.to_account_info(),
       to: ctx.accounts.treasury_account.to_account_info(),
@@ -65,6 +64,7 @@ pub mod multi_signers {
 #[derive(Accounts)]
 #[instruction(bump_seed: u8)]
 pub struct Initialize<'info> {
+  // This is the global state for an instance of this program
   #[account(
     init,
     payer = user,
@@ -73,16 +73,8 @@ pub struct Initialize<'info> {
   pub state: Account<'info, State>,
   #[account(mut)]
   pub user: Signer<'info>,
-  #[account(
-    init,
-    payer = user,
-    space = 8 + size_of::<TokenAccount>(),
-    token::mint = mint,
-    token::authority = user,
-  )]
-  pub treasury_account: Account<'info, TokenAccount>,
-  #[account(address = state.purchase_token)]
-  pub mint: Account<'info, Mint>,
+
+  // These two are needed to create of the above accounts
   pub token_program: Program<'info, Token>,
   pub system_program: Program<'info, System>,
 }
@@ -94,6 +86,7 @@ pub struct Contribute<'info> {
   pub state: Account<'info, State>,
 
   // this is the user state PDA which stores the state for the given user
+  // it uses the user public key and thus it's unique for each user
   #[account(
     init_if_needed,
     payer = user,
@@ -104,6 +97,10 @@ pub struct Contribute<'info> {
   pub user_state: Account<'info, UserInfo>,
   #[account(mut)]
   pub user: Signer<'info>,
+
+  // The token account owned by the user that call contribute
+  // the constraint suggest both this token account matched the 
+  // purchase token used for this sale
   #[account(
     mut,
     constraint = user_token_account.mint == state.purchase_token @ ErrorCode::UnsupportedToken
@@ -111,10 +108,16 @@ pub struct Contribute<'info> {
   pub user_token_account: Account<'info, TokenAccount>,
   #[account(
     mut,
-    // this is an alternative to using access_control
-    constraint = user_token_account.mint == treasury_account.mint @ ErrorCode::UnsupportedToken
+    // The token account owned by the treasury that stores all the raised funds
+    // The constraint suggests that both this token account and the treasury point to the
+    // same mint account i.e. Token
+    constraint = user_token_account.mint == treasury_account.mint @ ErrorCode::UnsupportedToken,
+    address = state.purchase_token
   )]
   pub treasury_account: Account<'info, TokenAccount>,
+
+  // The account that should co-sign the contribute operation to provide
+  // access to the user
   #[account()]
   pub auth_provider: Signer<'info>,
   pub token_program: Program<'info, Token>,
