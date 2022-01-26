@@ -1,3 +1,4 @@
+import { token } from "@project-serum/anchor/dist/cjs/utils"
 import {Token, TOKEN_PROGRAM_ID} from "@solana/spl-token"
 
 export const createMintAccount = async (
@@ -28,4 +29,32 @@ export const mintTo = async (
   authority,
   multiSigners,
   amount,
+)
+
+export const transfer = async (
+  sourceTokenAccount,
+  dest,
+  sourceTokenAccountOwner,
+  amount,
+  multiSigners=[]
+) => await token.transfer(
+  sourceTokenAccount,
+  dest,
+  sourceTokenAccountOwner,
+  multiSigners,
+  amount
+)
+
+export const approve = async (
+  sourceTokenAccount,
+  delegate,
+  sourceTokenAccountOwner,
+  amount,
+  multiSigners=[]
+) => await token.approve(
+  sourceTokenAccount,
+  delegate,
+  sourceTokenAccountOwner,
+  multiSigners,
+  amount
 )

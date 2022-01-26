@@ -33,14 +33,10 @@ pub mod multi_signers {
     let state = &mut ctx.accounts.state;
     let user_state = &mut ctx.accounts.user_state;
 
-    msg!("state account {:?}", state.key());
-    msg!("state.total_raised {:?}", state.total_raised);
+    // TODO: transfer tokens from user's token Account to the treasury account
 
     state.total_raised = state.total_raised.safe_add(amount)?;
     user_state.total_amount = user_state.total_amount.safe_add(amount)?;
-
-    msg!("state.total_raised {:?}", state.total_raised);
-    msg!("user_state.total_amount {:?}", user_state.total_amount);
 
     Ok(())
   }
