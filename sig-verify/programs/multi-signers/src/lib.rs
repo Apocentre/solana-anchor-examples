@@ -62,7 +62,6 @@ pub mod multi_signers {
 }
 
 #[derive(Accounts)]
-#[instruction(bump_seed: u8)]
 pub struct Initialize<'info> {
   // This is the global state for an instance of this program
   #[account(
