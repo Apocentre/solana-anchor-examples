@@ -160,6 +160,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "anchor-safe-math"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed8059fd94731e25dc55a602912a3f79d6592b1b34121ec8d16e91e400f16172"
+dependencies = [
+ "anchor-lang",
+]
+
+[[package]]
 name = "anchor-spl"
 version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -753,6 +762,7 @@ name = "multi-signers"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "anchor-safe-math",
  "anchor-spl",
 ]
 

@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use std::mem::size_of;
 use std::convert::Into;
-use safe_math::{SafeMath};
+use anchor_safe_math::{SafeMath};
 use program_errors::{ErrorCode};
 
 declare_id!("7m5hgk2TdJUJ4RX3paZg3EsPTuagphT5XT4MyZq4qy6J");
